@@ -29,7 +29,6 @@ priority:
     -recreate the routes
 
 non-priority (in order of importance):
-
     -improve gyro accuracy
     -A* incorporation
     -beautify
