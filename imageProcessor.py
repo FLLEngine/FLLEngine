@@ -5,7 +5,7 @@ from pathfinding.core.diagonal_movement import DiagonalMovement
 from pathfinding.core.grid import Grid
 from pathfinding.finder.a_star import AStarFinder
 
-def doPathFind(pathToPng,startX, startY, endX, endY, createImg):
+def doPathFind(pathToPng,startX, startY, endX, endY, createImg, pathToBackground):
     numpy.set_printoptions(threshold=sys.maxsize)
     decoded = cv2.imread(pathToPng, 0)
     tempList = []
@@ -32,7 +32,7 @@ def doPathFind(pathToPng,startX, startY, endX, endY, createImg):
     path, runs = finder.find_path(start, end, grid)
     print('done!')
     if createImg:
-        toEncode = cv2.imread('./../../robotics/matsmall.png', 1)
+        toEncode = cv2.imread(pathToBackground, 1)
         for coords in path:
             print(coords)
             toEncode[coords[1]][coords[0]] = (0, 255, 0)
