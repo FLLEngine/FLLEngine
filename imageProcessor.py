@@ -1,12 +1,9 @@
 import cv2
 import numpy
 import sys
-import imageProcessor
 from pathfinding.core.diagonal_movement import DiagonalMovement
 from pathfinding.core.grid import Grid
 from pathfinding.finder.a_star import AStarFinder
-import matplotlib.pyplot as plt
-import time
 
 def doPathFind(pathToPng,startX, startY, endX, endY, createImg):
     numpy.set_printoptions(threshold=sys.maxsize)
