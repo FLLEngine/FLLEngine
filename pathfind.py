@@ -3,9 +3,18 @@ import numpy
 import sys
 from pathfinding.core.diagonal_movement import DiagonalMovement
 from pathfinding.core.grid import Grid
-from pathfinding.finder.a_star import AStarFinder
+from pathfinding.core.util import *
+from pathfinding.finder import *
 
-def doPathFind(pathToPng,startX, startY, endX, endY, createImg, pathToBackground):
+def doCreateImg(path, pathToBackground, name='image'):
+    
+    toEncode = cv2.imread(pathToBackground, 1)
+    for coords in path:
+        toEncode[coords[1]][coords[0]] = (0, 255, 0)
+
+        cv2.imshow(name, toEncode)
+
+def doPathFind(pathToPng,startX, startY, endX, endY, algo = 'a_star',smoothen=True, createImg=False, pathToBackground=''):
     numpy.set_printoptions(threshold=sys.maxsize)
     image = cv2.imread(pathToPng, 1)
     tempList = []
@@ -34,14 +43,20 @@ def doPathFind(pathToPng,startX, startY, endX, endY, createImg, pathToBackground
     start = grid.node(startX, startY)
     end = grid.node(endX,endY)
 
-    finder = AStarFinder(diagonal_movement=DiagonalMovement.always)
-    path, runs = finder.find_path(start, end, grid)
-    print('done!')
-    if createImg:
-        toEncode = cv2.imread(pathToBackground, 1)
-        for coords in path:
-            toEncode[coords[1]][coords[0]] = (0, 255, 0)
+    if algo == 'a_star': 
+        finder = a_star.AStarFinder(diagonal_movement=DiagonalMovement.always)
+        path, runs = finder.find_path(start, end, grid)
+    elif algo == 'dijkstra':
+        finder = dijkstra.DijkstraFinder(diagonal_movement=DiagonalMovement.always)
+        path, runs = finder.find_path(start, end, grid)
 
-        cv2.imshow('image', toEncode)
+    if smoothen:
+        path = smoothen_path(grid, path, use_raytrace=False)    
+
+        
+    print('done')
+    if createImg:
+        doCreateImg(path, pathToBackground, name=algo)
         cv2.waitKey(0)
+
     return(path)
