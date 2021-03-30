@@ -49,6 +49,21 @@ def doPathFind(pathToPng,startX, startY, endX, endY, algo = 'a_star',smoothen=Tr
     elif algo == 'dijkstra':
         finder = dijkstra.DijkstraFinder(diagonal_movement=DiagonalMovement.always)
         path, runs = finder.find_path(start, end, grid)
+    elif algo == 'best_first':
+        finder = best_first.BestFirst(diagonal_movement=DiagonalMovement.always)
+        path, runs = finder.find_path(start, end, grid)
+    elif algo == 'bi_a_star':
+        finder = bi_a_star.BiAStarFinder(diagonal_movement=DiagonalMovement.always)
+        path, runs = finder.find_path(start, end, grid)
+    elif algo == 'breadth_first':
+        finder = breadth_first.BreadthFirstFinder(diagonal_movement=DiagonalMovement.always)
+        path, runs = finder.find_path(start, end, grid)
+    elif algo == 'ida_star':
+        finder = ida_star.IDAStarFinder(diagonal_movement=DiagonalMovement.always)
+        path, runs = finder.find_path(start, end, grid)
+    elif algo == "msp":
+        finder = msp.MinimumSpanningTree(diagonal_movement=DiagonalMovement.always)
+        path, runs = finder.find_path(start, end, grid)
 
     if smoothen:
         path = smoothen_path(grid, path, use_raytrace=False)    
