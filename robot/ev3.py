@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env pybricks-micropython
 # -*- coding: utf-8 -*-
 
 from pybricks.hubs import EV3Brick
