@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import *
-
-from pybricks.parameters import *
-from pybricks.tools import *
-from pybricks.robotics import *
-from pybricks.media.ev3dev import *
-
+from pybricks.ev3devices import (Motor, TouchSensor, ColorSensor,
+                                 InfraredSensor, UltrasonicSensor, GyroSensor)
+from pybricks.parameters import Port, Stop, Direction, Button, Color
+from pybricks.tools import wait, StopWatch, DataLog
+from pybricks.robotics import DriveBase
+from pybricks.media.ev3dev import SoundFile, ImageFile
 motorPorts = [Port.A, Port.B, Port.C, Port.D]
 sensorPorts = [Port.S1, Port.S2, Port.S3, Port.S4]
 
