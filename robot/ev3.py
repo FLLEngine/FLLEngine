@@ -1,5 +1,6 @@
 #!/usr/bin/env pybricks-micropython
 
+#|Pybricks import-------------------------------------------------------------------------------------------------|
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import (Motor, TouchSensor, ColorSensor,
                                  InfraredSensor, UltrasonicSensor, GyroSensor)
@@ -7,6 +8,10 @@ from pybricks.parameters import Port, Stop, Direction, Button, Color
 from pybricks.tools import wait, StopWatch, DataLog
 from pybricks.robotics import DriveBase
 from pybricks.media.ev3dev import SoundFile, ImageFile
+#|----------------------------------------------------------------------------------------------------------------|
+
+from .gyro import *
+
 motorPorts = [Port.A, Port.B, Port.C, Port.D]
 sensorPorts = [Port.S1, Port.S2, Port.S3, Port.S4]
 
@@ -40,8 +45,9 @@ class ev3robot:
 
     def fillSensors(self, sensors):
         for i, sensor in enumerate(sensors):
-            if sensor[0] == 'gyro':
-                self.gyro = GyroSensor(sensorPorts[i], positive_direction=getattr(Direction, sensor[1]))
+            if isinstance(sensor, gyro):
+                print(gyro)
+                self.gyro = sensor
             elif sensor[0] == 'color':
                 self.colorSensors.append(ColorSensor(sensorPorts[i]))
             else:
