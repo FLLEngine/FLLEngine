@@ -1,19 +1,19 @@
-# T h e   V i s i o n
+# Introduction
 
+This library aims to be an all-in-one pybricks-micropython library designed for FIRST Lego League. Our focuses are:
 
-what it needs to be:
+- ease of use
+- precision
+- reliability
 
-    -a clone of the original colin_gyro.ev3
-    -if possible a more accurate gyro funtion
+We would love to add features such as:
 
-
-what it CAN be:
-
-    -an API for getting the robots position at any given time
-    -an automatic line following API (given a path from an A* algorithm)
-    -an intuitive interface with the API for generating paths
-    -awesomeness
-
+- higher acuracy gyro sensor reads
+- easily-integrated failsafes
+- positional tracking based on motor and gyro reads
+- an easy-to-use graphical interface that might even be 3D ( ͡° ͜ʖ ͡°) 
+- multiple pathfinding algorithms
+- reverse kinemetics for attachments
 
 # ToDo
 
