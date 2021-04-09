@@ -1,5 +1,4 @@
 #!/usr/bin/env pybricks-micropython
-# -*- coding: utf-8 -*-
 
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import (Motor, TouchSensor, ColorSensor,
@@ -13,7 +12,7 @@ sensorPorts = [Port.S1, Port.S2, Port.S3, Port.S4]
 
 class ev3robot:
 
-    def __init__(self):
+    def __init__(self, motors, sensors):
 
         self.controller = "ev3"
         self.brick = EV3Brick()
@@ -23,6 +22,8 @@ class ev3robot:
         self.attach2 = ''
         self.gyro = ''
         self.colorSensors = []
+        self.fillMotors(motors)
+        self.fillMotors(sensors)
 
     def fillMotors(self, motors):
         for i, motor in enumerate(motors):
@@ -41,5 +42,7 @@ class ev3robot:
         for i, sensor in enumerate(sensors):
             if sensor[0] == 'gyro':
                 self.gyro = GyroSensor(sensorPorts[i], positive_direction=getattr(Direction, sensor[1]))
-            if sensor == 'color':
+            elif sensor[0] == 'color':
                 self.colorSensors.append(ColorSensor(sensorPorts[i]))
+            else:
+                print('empty port recognized')
