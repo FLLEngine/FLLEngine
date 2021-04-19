@@ -1,16 +1,31 @@
 #!/usr/bin/env pybricks-micropython
 
-from pybricks.parameters import Direction
+from pybricks.parameters import Direction, Port
 from pybricks.ev3devices import GyroSensor
+from pybricks.iodevices import AnalogSensor, Ev3devSensor
+from pybricks.tools import StopWatch
 import _thread
+import time
+# , positive_direction=(Direction.COUNTERCLOCKWISE if reverse else Direction.CLOCKWISE)
+
+
 
 class gyro:
 
     def __init__(self, port, reverse=False):
-        self.basic = GyroSensor(port, positive_direction=(Direction.COUNTERCLOCKWISE if reverse else Direction.CLOCKWISE))
+        self.sensor = Ev3devSensor(getattr(Port, port))
+        self.port = getattr(Port, port)
         self.name = 'gyro'
-        self.rotation = ""
+        self.rotation = float(0.0)
         self.rate = ""
 
     def startGyro(self):
         print('starting gyro...')
+        _thread.start_new_thread(self.gyroTrack())
+
+    def gyroTrack(self):
+        oldTime = time.perf_counter()
+        while True:
+            self.rotation = float(self.rotation)+float((self.sensor.read('GYRO-RATE')[0]*((float(oldTime)-float(time.perf_counter()))/1)))
+            oldTime = time.perf_counter()
+            print(str(self.rotation), self.sensor.read('GYRO-RATE'))

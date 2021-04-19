@@ -10,6 +10,7 @@ from pybricks.robotics import DriveBase
 from pybricks.media.ev3dev import SoundFile, ImageFile
 #|----------------------------------------------------------------------------------------------------------------|
 
+
 from .gyro import *
 
 motorPorts = [Port.A, Port.B, Port.C, Port.D]
@@ -28,7 +29,7 @@ class ev3robot:
         self.gyro = ''
         self.colorSensors = []
         self.fillMotors(motors)
-        self.fillMotors(sensors)
+        self.fillSensors(sensors)
 
     def fillMotors(self, motors):
         for i, motor in enumerate(motors):
@@ -40,15 +41,10 @@ class ev3robot:
                 self.attach1 = Motor(motorPorts[i], positive_direction=getattr(Direction, motor[1]), gears=motor[2])
             elif motor[0] == 'attach2':
                 self.attach2 = Motor(motorPorts[i], positive_direction=getattr(Direction, motor[1]), gears=motor[2])
-            else:
-                print('empty port recognized')
 
     def fillSensors(self, sensors):
         for i, sensor in enumerate(sensors):
             if isinstance(sensor, gyro):
-                print(gyro)
                 self.gyro = sensor
-            elif sensor[0] == 'color':
-                self.colorSensors.append(ColorSensor(sensorPorts[i]))
-            else:
-                print('empty port recognized')
+            #elif sensor.name == 'color':
+            #    self.colorSensors.append(sensor)
