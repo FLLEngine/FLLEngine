@@ -21,11 +21,12 @@ class gyro:
 
     def startGyro(self):
         print('starting gyro...')
-        _thread.start_new_thread(self.gyroTrack())
+        return _thread.start_new_thread(self.gyroTrack())
 
     def gyroTrack(self):
+        print('gyro started')
         oldTime = time.perf_counter()
         while True:
             self.rotation = float(self.rotation)+float((self.sensor.read('GYRO-RATE')[0]*((float(oldTime)-float(time.perf_counter()))/1)))
             oldTime = time.perf_counter()
-            print(str(self.rotation), self.sensor.read('GYRO-RATE'))
+            self.rate = self.sensor.read('GYRO-RATE')

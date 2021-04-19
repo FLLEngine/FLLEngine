@@ -12,6 +12,7 @@ from pybricks.media.ev3dev import SoundFile, ImageFile
 
 
 from .gyro import *
+from .color import *
 
 motorPorts = [Port.A, Port.B, Port.C, Port.D]
 sensorPorts = [Port.S1, Port.S2, Port.S3, Port.S4]
@@ -46,5 +47,5 @@ class ev3robot:
         for i, sensor in enumerate(sensors):
             if isinstance(sensor, gyro):
                 self.gyro = sensor
-            #elif sensor.name == 'color':
-            #    self.colorSensors.append(sensor)
+            elif isinstance(sensor, color):
+                self.colorSensors.append(sensor)
