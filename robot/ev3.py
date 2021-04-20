@@ -17,6 +17,9 @@ import _thread
 motorPorts = [Port.A, Port.B, Port.C, Port.D]
 sensorPorts = [Port.S1, Port.S2, Port.S3, Port.S4]
 
+
+
+#--general-robot-stuff------------------------------------------------------------------------------------------------------------------------------|
 class ev3robot:
 
     def __init__(self, motors, sensors, dimentions):
@@ -60,7 +63,12 @@ class ev3robot:
             for i, button in enumerate(self.brick.buttons.pressed()):
                 if button == getattr(Button, str(selectedButton.upper())):
                     waiting = False
+#---------------------------------------------------------------------------------------------------------------------------------------------------|
 
+
+
+
+#--color-sensor-stuff-------------------------------------------------------------------------------------------------------------------------------|
 class color:
     def __init__(self, port):
         self.sensor = Ev3devSensor(getattr(Port, port.upper()))
@@ -69,7 +77,12 @@ class color:
 
     def read(self):
         return self.sensor.read("RGB-RAW")
+#---------------------------------------------------------------------------------------------------------------------------------------------------|
 
+
+
+
+#--gyro-stuff---------------------------------------------------------------------------------------------------------------------------------------|
 class gyro:
 
     def __init__(self, port, reverse=False):
@@ -90,3 +103,4 @@ class gyro:
             self.rotation = float(self.rotation)+float((self.sensor.read('GYRO-RATE')[0]*((float(oldTime)-float(time.perf_counter()))/1)))
             oldTime = time.perf_counter()
             self.rate = self.sensor.read('GYRO-RATE')
+#---------------------------------------------------------------------------------------------------------------------------------------------------|
