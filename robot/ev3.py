@@ -34,7 +34,7 @@ class ev3robot:
         self.colorSensors = []
         self._fillMotors(motors)
         self._fillSensors(sensors)
-        self. train = self._createTrain(dimentions)
+        self.train = self._createTrain(dimentions)
 
     def _fillMotors(self, motors):
         for i, motor in enumerate(motors):
@@ -103,4 +103,27 @@ class gyro:
             self.rotation = float(self.rotation)+float((self.sensor.read('GYRO-RATE')[0]*((float(oldTime)-float(time.perf_counter()))/1)))
             oldTime = time.perf_counter()
             self.rate = self.sensor.read('GYRO-RATE')
+#---------------------------------------------------------------------------------------------------------------------------------------------------|
+
+
+
+
+#--custom-drive-base--------------------------------------------------------------------------------------------------------------------------------|
+# class driveBase:
+#     def __init__(robot, diameter, axleLength, fullRotation=360):
+#         self.diameter = diameter
+#         self.axleLength = axleLength
+#         self.assignedRobot = robot
+#         self.lengthModifier = fullRotation/(3.14159265358979 * diameter) #calculates the value we need to muliply distance by to get target degrees
+
+#     def tankControl(self, on=True, speed=50, steering=0):
+
+
+#     def drive(self, length, speed, rotation='use start'):
+#         if rotation == 'use start':
+#             rotation = self.assignedRobot.gyro.rotation
+
+#         driving = True
+#         while driving:
+
 #---------------------------------------------------------------------------------------------------------------------------------------------------|
