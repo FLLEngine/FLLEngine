@@ -36,13 +36,13 @@ class ev3robot:
     def _fillMotors(self, motors):
         for i, motor in enumerate(motors):
             if motor[0] == 'driveL':
-                self.driveL = Motor(motorPorts[i], positive_direction=getattr(Direction, motor[1]), gears=motor[2])
+                self.driveL = Motor(motorPorts[i], positive_direction=getattr(Direction, motor[1].upper()), gears=motor[2])
             elif motor[0] == 'driveR':
-                self.driveR = Motor(motorPorts[i], positive_direction=getattr(Direction, motor[1]), gears=motor[2])
+                self.driveR = Motor(motorPorts[i], positive_direction=getattr(Direction, motor[1].upper()), gears=motor[2])
             elif motor[0] == 'attach1':
-                self.attach1 = Motor(motorPorts[i], positive_direction=getattr(Direction, motor[1]), gears=motor[2])
+                self.attach1 = Motor(motorPorts[i], positive_direction=getattr(Direction, motor[1].upper()), gears=motor[2])
             elif motor[0] == 'attach2':
-                self.attach2 = Motor(motorPorts[i], positive_direction=getattr(Direction, motor[1]), gears=motor[2])
+                self.attach2 = Motor(motorPorts[i], positive_direction=getattr(Direction, motor[1].upper()), gears=motor[2])
 
     def _fillSensors(self, sensors):
         for i, sensor in enumerate(sensors):
@@ -54,10 +54,17 @@ class ev3robot:
     def _createTrain(self, dimentions):
         return DriveBase(self.driveL, self.driveR, dimentions.diameter, dimentions.axleLength)
 
+    def waitForButton(self, selectedButton):
+        waiting = True
+        while waiting:
+            for i, button in enumerate(self.brick.buttons.pressed()):
+                if button == getattr(Button, str(selectedButton.upper())):
+                    waiting = False
+
 class color:
     def __init__(self, port):
-        self.sensor = Ev3devSensor(getattr(Port, port))
-        self.port = getattr(Port, port)
+        self.sensor = Ev3devSensor(getattr(Port, port.upper()))
+        self.port = getattr(Port, port.upper())
         self.name = 'color'
 
     def read(self):
@@ -66,8 +73,8 @@ class color:
 class gyro:
 
     def __init__(self, port, reverse=False):
-        self.sensor = Ev3devSensor(getattr(Port, port))
-        self.port = getattr(Port, port)
+        self.sensor = Ev3devSensor(getattr(Port, port.upper()))
+        self.port = getattr(Port, port.upper())
         self.name = 'gyro'
         self.rotation = float(0.0)
         self.rate = ""
