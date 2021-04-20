@@ -109,21 +109,33 @@ class gyro:
 
 
 #--custom-drive-base--------------------------------------------------------------------------------------------------------------------------------|
-# class driveBase:
-#     def __init__(robot, diameter, axleLength, fullRotation=360):
-#         self.diameter = diameter
-#         self.axleLength = axleLength
-#         self.assignedRobot = robot
-#         self.lengthModifier = fullRotation/(3.14159265358979 * diameter) #calculates the value we need to muliply distance by to get target degrees
+class driveBase:
+    def __init__(robot, diameter, axleLength, fullRotation=360):
+        self.diameter = diameter
+        self.axleLength = axleLength
+        self.assignedRobot = robot
+        self.lengthModifier = fullRotation/(3.14159265358979 * diameter) #calculates the value we need to muliply distance by to get target degrees
+        self.driveSpeed = 50
+        self.driveAcceleration = 50
+        self.turnSpeed = 10
+        self.turnAcceleration = 50
 
-#     def tankControl(self, on=True, speed=50, steering=0):
+    def tankControl(self, speed=50, steering=0):
+        if speed != 0:
+            self.assignedRobot.driveL.run(speed+steering)
+            self.assignedRobot.driveR.run(speed-steering)
+        else:
+            self.assignedRobot.driveL.hold()
+            self.assignedRobot.driveR.hold()
 
+        
+    def drive(self, length, speed, rotation='use start'):
+        if rotation == 'use start':
+            rotation = self.assignedRobot.gyro.rotation
 
-#     def drive(self, length, speed, rotation='use start'):
-#         if rotation == 'use start':
-#             rotation = self.assignedRobot.gyro.rotation
-
-#         driving = True
-#         while driving:
-
+        driving = True
+        startTime = time.perf_counter()
+        while driving:
+            if time.perf_counter() < self.driveSpeed/self.driveAcceleration:
+                self.tankControl(speed=(time.perf_counter()/(self.driveSpeed/self.driveAcceleration)*self.driveSpeed))
 #---------------------------------------------------------------------------------------------------------------------------------------------------|
