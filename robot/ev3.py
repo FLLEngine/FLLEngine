@@ -55,7 +55,7 @@ class ev3robot:
                 self.colorSensors.append(sensor)
 
     def _createTrain(self, dimentions):
-        return DriveBase(self.driveL, self.driveR, dimentions.diameter, dimentions.axleLength)
+        return driveBase(self, dimentions.diameter, dimentions.axleLength)
 
     def waitForButton(self, selectedButton):
         waiting = True
@@ -110,15 +110,21 @@ class gyro:
 
 #--custom-drive-base--------------------------------------------------------------------------------------------------------------------------------|
 class driveBase:
-    def __init__(robot, diameter, axleLength, fullRotation=360):
+    def __init__(self, robot, diameter, axleLength, fullRotation=360):
         self.diameter = diameter
         self.axleLength = axleLength
         self.assignedRobot = robot
         self.lengthModifier = fullRotation/(3.14159265358979 * diameter) #calculates the value we need to muliply distance by to get target degrees
-        self.driveSpeed = 50
-        self.driveAcceleration = 50
+        self.rotToMM = (3.14159265358979*diameter/fullRotation)
+        self.driveSpeed = 1000
+        self.driveAcceleration = 750
         self.turnSpeed = 10
         self.turnAcceleration = 50
+        self.decelerationWall = 100
+        self.straightSensitivity = 1
+
+    def tankDistance(self, subtract=(0,0)):
+        return (((self.assignedRobot.driveL.angle()-subtract[0]) + (self.assignedRobot.driveR.angle()-subtract[1]))/2)*self.rotToMM
 
     def tankControl(self, speed=50, steering=0):
         if speed != 0:
@@ -128,14 +134,35 @@ class driveBase:
             self.assignedRobot.driveL.hold()
             self.assignedRobot.driveR.hold()
 
-        
-    def drive(self, length, speed, rotation='use start'):
+
+    def drive(self, length, useGyro=True, rotation='use start'):
         if rotation == 'use start':
             rotation = self.assignedRobot.gyro.rotation
 
         driving = True
+        startPositions = (self.assignedRobot.driveL.angle(), self.assignedRobot.driveR.angle())
+        accelDistance = 0.5*self.driveSpeed*(self.driveSpeed/self.driveAcceleration)
+        startedDecel = False
         startTime = time.perf_counter()
         while driving:
-            if time.perf_counter() < self.driveSpeed/self.driveAcceleration:
-                self.tankControl(speed=(time.perf_counter()/(self.driveSpeed/self.driveAcceleration)*self.driveSpeed))
+            if ((time.perf_counter()-startTime)/(self.driveAcceleration/self.driveSpeed)*(self.driveSpeed))<self.driveSpeed:
+                stage = 'accel'
+                self.tankControl(speed=(self.tankDistance(subtract=startPositions)/accelDistance*(self.driveSpeed)), steering=(self.assignedRobot.driveR.angle()-self.assignedRobot.driveL.angle())*self.straightSensitivity)
+
+            elif (self.tankDistance(subtract=startPositions))<length-accelDistance:
+                stage = 'drive'
+                self.tankControl(speed=self.driveSpeed, steering=(self.assignedRobot.driveR.angle()-self.assignedRobot.driveL.angle())*self.straightSensitivity)
+
+            elif self.tankDistance(subtract=startPositions)>length-accelDistance and self.tankDistance(subtract=startPositions)<length:
+                stage = 'decel'
+                if ((length-self.tankDistance(subtract=startPositions))/accelDistance*(self.driveSpeed)) > self.decelerationWall:
+                    self.tankControl(speed=((length-self.tankDistance(subtract=startPositions))/accelDistance*(self.driveSpeed)), steering=(self.assignedRobot.driveR.angle()-self.assignedRobot.driveL.angle())*self.straightSensitivity)
+                else:
+                    self.tankControl(speed=self.decelerationWall, steering=(self.assignedRobot.driveR.angle()-self.assignedRobot.driveL.angle())*self.straightSensitivity)
+
+                print(stage, self.tankDistance(subtract=startPositions))
+            else:
+                self.tankControl(speed = 0)
+                driving = False
+
 #---------------------------------------------------------------------------------------------------------------------------------------------------|
