@@ -116,11 +116,11 @@ class driveBase:
         self.assignedRobot = robot
         self.lengthModifier = fullRotation/(3.14159265358979 * diameter) #calculates the value we need to muliply distance by to get target degrees
         self.rotToMM = (3.14159265358979*diameter/fullRotation)
-        self.driveSpeed = 1500
+        self.driveSpeed = 1000
         self.driveAcceleration = 500
         self.turnSpeed = 10
         self.turnAcceleration = 50
-        self.decelerationWall = 10
+        self.decelerationWall = 50
         self.straightSensitivity = 1
 
     def tankDistance(self, subtract=(0,0)):
@@ -141,58 +141,74 @@ class driveBase:
 
         driving = True
         startPositions = (self.assignedRobot.driveL.angle(), self.assignedRobot.driveR.angle())
-        accelDistance = 0
-        startedDecel = False
-        first = True
-        firstDecel = True
+        # accelDistance = 0
+        # startedDecel = False
+        # first = True
+        # firstDecel = True
         startTime = time.perf_counter()
         vel = 0
         neg = False
-        manSwitch = False
+        # manSwitch = False
+        startSpeed = (self.assignedRobot.driveL.speed()+self.assignedRobot.driveR.speed())/2
         if length < 0:
             length = 0-length
             neg = True
 
-        while (self.tankDistance(subtract=startPositions)<=length):
-            if self.tankDistance(subtract=startPositions)<length-accelDistance and manSwitch==False:
-                if first:
-                    startTime = time.perf_counter()
-                    first = False
+        while vel<self.driveSpeed and self.tankDistance(subtract=startPositions)<length/2:
+            vel = ((time.perf_counter()-startTime)/((self.driveSpeed-startSpeed)/self.driveAcceleration)*(self.driveSpeed-startSpeed))
+            print(self.tankDistance(subtract=startPositions), vel)
+            self.tankControl(speed=((neg==True) * (0-vel) + (neg==False) * vel), steering=(self.assignedRobot.driveR.angle()-self.assignedRobot.driveL.angle())*self.straightSensitivity)
 
-                if vel < self.driveSpeed:
-                    vel = ((time.perf_counter()-startTime)/(self.driveSpeed/self.driveAcceleration)*self.driveSpeed)
-                    accelDistanceI = self.tankDistance(subtract=startPositions)
-                    stage = 'accel'
-                    if self.tankDistance(subtract=startPositions)>=length/2:
-                        manSwitch = True
-                        accelDistance = accelDistanceI-5
-                        decelSpeed = vel
-                        startDecel=time.perf_counter()
+        accelTime = time.perf_counter()-startTime
+        accelDistance = self.tankDistance(subtract=startPositions)
+        while self.tankDistance(subtract=startPositions)<length-accelDistance:
+            vel = self.driveSpeed
+            print(self.tankDistance(subtract=startPositions), vel)
+            self.tankControl(speed=((neg==True) * (0-vel) + (neg==False) * vel), steering=(self.assignedRobot.driveR.angle()-self.assignedRobot.driveL.angle())*self.straightSensitivity)
 
-                else:
-                    vel = self.driveSpeed
-                    accelDistance = accelDistanceI
-                    decelSpeed = vel
-                    startDecel=time.perf_counter()
-                    stage = 'drive'
+        print(startTime)
+        startTime = time.perf_counter()
+        decelSpeed = vel
+        print(accelDistance, decelSpeed, startTime)
+        while self.tankDistance(subtract=startPositions)<length:
+            vel = max(decelSpeed-(time.perf_counter()-startTime)/(accelTime*0.85)*decelSpeed, self.decelerationWall)
+            print(self.tankDistance(subtract=startPositions), vel)
+            self.tankControl(speed=((neg==True) * (0-vel) + (neg==False) * vel), steering=(self.assignedRobot.driveR.angle()-self.assignedRobot.driveL.angle())*self.straightSensitivity)
 
-            elif self.tankDistance(subtract=startPositions)<length:
-                stage = 'decel'
-                if decelSpeed-((time.perf_counter()-startDecel)/(decelSpeed/self.driveAcceleration)*decelSpeed) > self.decelerationWall:
-                    print((self.driveSpeed-(time.perf_counter()-startDecel)/(self.driveSpeed/self.driveAcceleration)*self.driveSpeed)-(self.driveSpeed-decelSpeed), (self.driveSpeed-(time.perf_counter()-startDecel)/(self.driveSpeed/self.driveAcceleration)*self.driveSpeed), (self.driveSpeed-decelSpeed), decelSpeed)
-                    if manSwitch:
-                        vel = (self.driveSpeed-(time.perf_counter()-startDecel)/(self.driveSpeed/self.driveAcceleration)*self.driveSpeed)-(self.driveSpeed-decelSpeed)# decelSpeed-(time.perf_counter()-startDecel)/(startDecel-startTime)*decelSpeed-(self.driveSpeed-decelSpeed)
+            # if self.tankDistance(subtract=startPositions)<length-accelDistance and manSwitch==False:
+            #     if first:
+            #         startTime = time.perf_counter()
+            #         first = False
 
-                    else:
-                        vel = self.driveSpeed-(time.perf_counter()-startDecel)/(self.driveSpeed/self.driveAcceleration)*self.driveSpeed
+            #     if vel < self.driveSpeed:
+            #         vel = ((time.perf_counter()-startTime)/(self.driveSpeed/self.driveAcceleration)*self.driveSpeed)
+            #         accelDistanceI = self.tankDistance(subtract=startPositions)
+            #         stage = 'accel'
+            #         if self.tankDistance(subtract=startPositions)>=length/2:
+            #             manSwitch = True
+            #             accelDistance = accelDistanceI-5
+            #             decelSpeed = vel
+            #             startDecel=time.perf_counter()
 
-                else:
-                    vel = self.decelerationWall
-                    print('decwall')
+            #     else:
+            #         vel = self.driveSpeed
+            #         accelDistance = accelDistanceI
+            #         decelSpeed = vel
+            #         stage = 'drive'
+            #         startDecel=time.perf_counter()
+
+            # elif self.tankDistance(subtract=startPositions)<length:
+            #     stage = 'decel'
+            #     if decelSpeed-((time.perf_counter()-startDecel)/(decelSpeed/self.driveAcceleration)*decelSpeed) > self.decelerationWall:
+            #         vel = decelSpeed-((time.perf_counter()-startDecel)/(self.driveSpeed/self.driveAcceleration)*self.driveSpeed)
+
+            #     else:
+            #         vel = self.decelerationWall
+            #         print('decwall')
 
             #got that branchless if statement in there :D
-            self.tankControl(speed=((neg==True) * (0-vel) + (neg==False) * vel), steering=(self.assignedRobot.driveR.angle()-self.assignedRobot.driveL.angle())*self.straightSensitivity)
-            print(stage, self.tankDistance(subtract=startPositions), vel, length)
+            # self.tankControl(speed=((neg==True) * (0-vel) + (neg==False) * vel), steering=(self.assignedRobot.driveR.angle()-self.assignedRobot.driveL.angle())*self.straightSensitivity)
+            # print(stage, self.tankDistance(subtract=startPositions), vel, length, accelDistance)
 
         self.tankControl(speed=0)
         print('stopped')
