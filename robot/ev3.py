@@ -12,6 +12,7 @@ from pybricks.iodevices import Ev3devSensor
 #|----------------------------------------------------------------------------------------------------------------|
 
 import time
+from math import cos, sin
 import _thread
 
 motorPorts = [Port.A, Port.B, Port.C, Port.D]
@@ -31,6 +32,7 @@ class ev3robot:
         self.attach1 = ''
         self.attach2 = ''
         self.gyro = ''
+        self.location = (0,0)
         self.colorSensors = []
         self._fillMotors(motors)
         self._fillSensors(sensors)
@@ -57,12 +59,37 @@ class ev3robot:
     def _createTrain(self, dimentions):
         return driveBase(self, dimentions.diameter, dimentions.axleLength)
 
+    def _MPS(self):
+        print('MPS started')
+        previousAngle = self.gyro.rotation
+        previousWheelPos =  (self.driveL.angle(), self.driveR.angle())
+        oldTime = time.perf_counter()
+        while True:
+            angle = (self.gyro.rotation+previousAngle)/2
+            wheelPos = (self.driveL.angle(), self.driveR.angle())
+            forward = ((wheelPos[0]-previousWheelPos[0]) + (wheelPos[1]-previousWheelPos[1]))/2
+            #elaborate if statements
+            x = ((angle<90)*(forward*cos(angle))  +  ((angle>=90 and angle<180)*(0-(forward*cos(90-(angle-90)))))  +  ((angle>-180 and angle<270)*(0-(forward*cos(angle-180))))  +  ((angle>=270 and angle<360)*(forward*cos(90-(angle-270)))))
+            y = ((angle<90)*(forward*sin(angle))  +  ((angle>=90 and angle<180)*(forward*sin(90-(angle-90))))  +  ((angle>-180 and angle<270)*(0-(forward*sin(angle-180))))  +  ((angle>=270 and angle<360)*(0-(forward*sin(90-(angle-270))))))
+            self.location = (self.location[0]+x, self.location[1]+y)
+            print(self.location, angle)
+            previousAngle = angle
+            previousWheelPos = wheelPos
+
     def waitForButton(self, selectedButton):
         waiting = True
         while waiting:
             for i, button in enumerate(self.brick.buttons.pressed()):
                 if button == getattr(Button, str(selectedButton.upper())):
                     waiting = False
+
+    def MPSStart(self):
+        self.driveL.reset_angle(0)
+        self.driveR.reset_angle(0)
+        if self.gyro.running == False:
+            self.gyro.startGyro()
+
+        _thread.start_new_thread(self._MPS, ())
 #---------------------------------------------------------------------------------------------------------------------------------------------------|
 
 
@@ -91,12 +118,14 @@ class gyro:
         self.name = 'gyro'
         self.rotation = float(0.0)
         self.rate = ""
+        self.running = False
 
     def startGyro(self):
         print('starting gyro...')
-        return _thread.start_new_thread(self.gyroTrack, ())
+        self.running = True
+        return _thread.start_new_thread(self._gyroTrack, ())
 
-    def gyroTrack(self):
+    def _gyroTrack(self):
         print('gyro started')
         oldTime = time.perf_counter()
         while True:
