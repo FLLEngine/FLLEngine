@@ -72,7 +72,7 @@ class ev3robot:
             x = ((angle<90)*(forward*cos(angle))  +  ((angle>=90 and angle<180)*(0-(forward*cos(90-(angle-90)))))  +  ((angle>-180 and angle<270)*(0-(forward*cos(angle-180))))  +  ((angle>=270 and angle<360)*(forward*cos(90-(angle-270)))))
             y = ((angle<90)*(forward*sin(angle))  +  ((angle>=90 and angle<180)*(forward*sin(90-(angle-90))))  +  ((angle>-180 and angle<270)*(0-(forward*sin(angle-180))))  +  ((angle>=270 and angle<360)*(0-(forward*sin(90-(angle-270))))))
             self.location = (self.location[0]+x, self.location[1]+y)
-            print(self.location, angle)
+            print(self.location, angle, forward, self.gyro.rotation)
             previousAngle = angle
             previousWheelPos = wheelPos
 
@@ -129,7 +129,7 @@ class gyro:
         print('gyro started')
         oldTime = time.perf_counter()
         while True:
-            self.rotation = float(self.rotation)+float((self.sensor.read('GYRO-RATE')[0]*((float(oldTime)-float(time.perf_counter()))/1)))
+            self.rotation = round(float(self.rotation)+float((self.sensor.read('GYRO-RATE')[0]*((float(oldTime)-float(time.perf_counter()))/1))), 2)
             oldTime = time.perf_counter()
             self.rate = self.sensor.read('GYRO-RATE')
 #---------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -163,6 +163,12 @@ class driveBase:
             self.assignedRobot.driveL.hold()
             self.assignedRobot.driveR.hold()
 
+    def _getSteer(self, useGyro, startRotation = 0):
+        if gyro:
+            return 0-(self.assignedRobot.gyro.rotation-startRotation)
+
+        else:
+            return (self.assignedRobot.driveR.angle()-self.assignedRobot.driveL.angle())*self.straightSensitivity
 
     def drive(self, length, useGyro=True, rotation='use start'):
         if rotation == 'use start':
@@ -180,13 +186,13 @@ class driveBase:
 
         while vel<self.driveSpeed and self.tankDistance(subtract=startPositions)<length/2:
             vel = ((time.perf_counter()-startTime)/((self.driveSpeed-startSpeed)/self.driveAcceleration)*(self.driveSpeed-startSpeed))
-            self.tankControl(speed=((neg==True) * (0-vel) + (neg==False) * vel), steering=(self.assignedRobot.driveR.angle()-self.assignedRobot.driveL.angle())*self.straightSensitivity)
+            self.tankControl(speed=((neg==True) * (0-vel) + (neg==False) * vel), steering=self._getSteer(useGyro, startRotation=rotation))
 
         accelTime = time.perf_counter()-startTime
         accelDistance = self.tankDistance(subtract=startPositions)
         while self.tankDistance(subtract=startPositions)<length-accelDistance:
             vel = self.driveSpeed
-            self.tankControl(speed=((neg==True) * (0-vel) + (neg==False) * vel), steering=(self.assignedRobot.driveR.angle()-self.assignedRobot.driveL.angle())*self.straightSensitivity)
+            self.tankControl(speed=((neg==True) * (0-vel) + (neg==False) * vel), steering=self._getSteer(useGyro, startRotation=rotation))
 
         print(startTime)
         startTime = time.perf_counter()
@@ -194,7 +200,7 @@ class driveBase:
         print(accelDistance, decelSpeed, startTime)
         while self.tankDistance(subtract=startPositions)<length:
             vel = max(decelSpeed-(time.perf_counter()-startTime)/(accelTime*0.85)*decelSpeed, self.decelerationWall)
-            self.tankControl(speed=((neg==True) * (0-vel) + (neg==False) * vel), steering=(self.assignedRobot.driveR.angle()-self.assignedRobot.driveL.angle())*self.straightSensitivity)
+            self.tankControl(speed=((neg==True) * (0-vel) + (neg==False) * vel), steering=self._getSteer(useGyro, startRotation=rotation))
 
         self.tankControl(speed=0)
         print('stopped')
