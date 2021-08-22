@@ -12,7 +12,7 @@ Unfortunately as made apparent by recent progress and recent testing it has been
 
 - easily-integrated failsafes
 - positional tracking based on motor and gyro reads
-- direction of movement dinamically changing based on deviation from given path
+- direction of movement dynamically changing based on deviation from given path
 - an easy-to-use graphical interface
 - multiple pathfinding algorithms
 - reverse kinemetics for attachments
