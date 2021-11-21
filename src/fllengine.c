@@ -13,7 +13,7 @@ STATIC mp_obj_t fll_test() {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(fll_test_obj, fll_test);
 
 STATIC const mp_rom_map_elem_t fll_module_globals_table[] = {
-{ MP_ROM_QSTR(MP_QSTR__name__), MP_ROM_QSTR(MP_QSTR_fllengine) },
+{ MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_fllengine) },
 { MP_ROM_QSTR(MP_QSTR_fll_test), MP_ROM_PTR(&fll_test_obj) },
 };
 
