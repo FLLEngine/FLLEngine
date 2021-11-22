@@ -2,17 +2,17 @@ FROZEN_MANIFEST ?= manifest.py
 FROZEN_DIR =
 FROZEN_MPY_DIR =
 
-ifeq ("$(wildcard .micropython/lib/axtls/README)","")
+ifeq ("$(wildcard micropython/lib/axtls/README)","")
 $(info GIT cloning axtls submodule)
-$(info $(shell cd .micropython && git submodule update --init lib/axtls))
-ifeq ("$(wildcard .micropython/lib/axtls/README)","")
+$(info $(shell cd micropython && git submodule update --init lib/axtls))
+ifeq ("$(wildcard micropython/lib/axtls/README)","")
 $(error failed)
 endif
 endif
-ifeq ("$(wildcard .micropython/lib/berkeley-db-1.xx/README)","")
+ifeq ("$(wildcard micropython/lib/berkeley-db-1.xx/README)","")
 $(info GIT cloning berkeley-db-1.xx submodule)
-$(info $(shell cd .micropython && git submodule update --init lib/berkeley-db-1.xx))
-ifeq ("$(wildcard .micropython/lib/berkeley-db-1.xx/README)","")
+$(info $(shell cd micropython && git submodule update --init lib/berkeley-db-1.xx))
+ifeq ("$(wildcard micropython/lib/berkeley-db-1.xx/README)","")
 $(error failed)
 endif
 endif
@@ -31,4 +31,4 @@ CFLAGS += -DMICROPY_MODULE_FROZEN_STR
 endif
 
 main:
-	make -C .micropython/ports/unix USER_C_MODULES=../../.. V=1 PYBRICKS_VERSION_LEVEL_STR='idgaf'
+	make -C micropython/ports/unix USER_C_MODULES=../../.. V=1 PYBRICKS_VERSION_LEVEL_STR='idgaf'

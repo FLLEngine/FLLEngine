@@ -1,20 +1,118 @@
 #include "py/runtime.h"
+#include "py/objstr.h"
+
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <dirent.h>
 
 const char init_line[] = "Go Mindbenders!";
+pthread_t gyroThread;
+double gyroAngle;
 
-STATIC mp_obj_t fll_test() {
-    printf("%s\n", init_line);
-    return mp_const_true;
+char *findGyro() {
+    struct dirent *dir;
+    DIR *rootdir = opendir("/sys/class/lego-sensor/");
+    if (rootdir == NULL) {
+        printf("Could not open lego-sensors directory");
+        return 0;
+    }
+    printf("success");
+
+    while((dir = readdir(rootdir)) != NULL) {
+        printf("dir:%s\n", dir->d_name);
+        char path[50];
+        FILE *nameFile;
+        char name[30];
+        snprintf(path, sizeof(path), "/sys/class/lego-sensor/%s/driver_name", dir->d_name);
+        nameFile=fopen(path, "r");
+        fscanf(nameFile, "%s", name);
+        if(strcmp(name, "lego-ev3-gyro")) {
+            extern char location[35];
+            snprintf(location, sizeof(location), "/sys/class/lego-sensor/%s", dir->d_name);
+            closedir(rootdir);
+            return location;
+        }
+    }
+    closedir(rootdir);
+    return false;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(fll_test_obj, fll_test);
+void *GyroAng(void *vargp) {
+    printf("starting gyro");
+    char modeFileLoc[50], valueFileLoc[50];
+    char *gyroLoc = findGyro();
+    printf("gyro found");
+    printf("%s\n",gyroLoc);
+    sleep(5);
+    snprintf(modeFileLoc, sizeof(modeFileLoc), "%s/mode", gyroLoc);
+    snprintf(valueFileLoc, sizeof(valueFileLoc), "%s/value0", gyroLoc);
+    FILE *gyroModeFile = fopen(modeFileLoc,"w");
+    fprintf(gyroModeFile, "GYRO-RATE");
+    fclose(gyroModeFile);
+    int gyroValue;
+    clock_t previous;
+    clock_t recent = 0;
+    while(true) {
+        FILE* gyroValueFile = fopen(valueFileLoc, "r");
+        rewind(gyroValueFile);
+        fscanf(gyroValueFile, "%d", &gyroValue);
+        previous = recent;
+        recent = clock();
+        gyroAngle = gyroAngle+(gyroValue*(((double) (recent - previous))/CLOCKS_PER_SEC));
+        fclose(gyroValueFile);
+    }
+    return NULL;
+}
+
+//STATIC mp_obj_t fll_init() {
+//    pthread_t gyroThread;
+//}
+
+STATIC mp_obj_t fll_start_gyro() {
+    pthread_t gyroThread;
+    pthread_create(&gyroThread, NULL, GyroAng, NULL);
+    return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(fll_start_gyro_obj, fll_start_gyro);
+
+STATIC mp_obj_t fll_stop_gyro() {
+    pthread_cancel(gyroThread);
+    return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(fll_stop_gyro_obj, fll_stop_gyro);
+
+
+STATIC mp_obj_t fll_test(mp_obj_t text_mp_obj) {
+    mp_check_self(mp_obj_is_str_or_bytes(text_mp_obj));
+    GET_STR_DATA_LEN(text_mp_obj, pre_text, text_len);
+    char text[text_len];
+    strcpy(text, (char *)pre_text);
+    printf("%s: %d\n", text, text_len);
+    return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_test_obj, fll_test);
+
+STATIC mp_obj_t fll_watch_gyro() {
+    while(true){
+        printf("%f\n",gyroAngle);
+    }
+    return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(fll_watch_gyro_obj, fll_watch_gyro);
+
 
 STATIC const mp_rom_map_elem_t fll_module_globals_table[] = {
 { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_fllengine) },
-{ MP_ROM_QSTR(MP_QSTR_fll_test), MP_ROM_PTR(&fll_test_obj) },
+{ MP_ROM_QSTR(MP_QSTR_test), MP_ROM_PTR(&fll_test_obj) },
+{ MP_ROM_QSTR(MP_QSTR_watchGyro), MP_ROM_PTR(&fll_watch_gyro_obj) },
+{ MP_ROM_QSTR(MP_QSTR_startGyro), MP_ROM_PTR(&fll_start_gyro_obj) },
+{ MP_ROM_QSTR(MP_QSTR_stopGyro), MP_ROM_PTR(&fll_stop_gyro_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(fll_module_globals, fll_module_globals_table);
