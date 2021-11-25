@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -14,57 +15,80 @@
 const char init_line[] = "Go Mindbenders!";
 pthread_t gyroThread;
 double gyroAngle;
+char location[35];
 
 char *findGyro() {
     struct dirent *dir;
     DIR *rootdir = opendir("/sys/class/lego-sensor/");
     if (rootdir == NULL) {
-        printf("Could not open lego-sensors directory");
+        printf("Could not open lego-sensors directory/n");
         return 0;
     }
-    printf("success");
+    printf("children of sensors directory:\n");
 
     while((dir = readdir(rootdir)) != NULL) {
-        printf("dir:%s\n", dir->d_name);
-        char path[50];
-        FILE *nameFile;
-        char name[30];
-        snprintf(path, sizeof(path), "/sys/class/lego-sensor/%s/driver_name", dir->d_name);
-        nameFile=fopen(path, "r");
-        fscanf(nameFile, "%s", name);
-        if(strcmp(name, "lego-ev3-gyro")) {
-            extern char location[35];
-            snprintf(location, sizeof(location), "/sys/class/lego-sensor/%s", dir->d_name);
-            closedir(rootdir);
-            return location;
+        printf("%s\n", dir->d_name);
+        if(strncmp("sensor", dir->d_name, 6)==0){
+            char path[50];
+            FILE *nameFile;
+            char name[30];
+            snprintf(path, sizeof(path), "/sys/class/lego-sensor/%s/driver_name", dir->d_name);
+            nameFile=fopen(path, "r");
+            fscanf(nameFile, "%s", name);
+            if(strcmp(name, "lego-ev3-gyro")==0) {
+                snprintf(location, sizeof(location), "/sys/class/lego-sensor/%s", dir->d_name);
+                closedir(rootdir);
+                return location;
+            }
         }
     }
     closedir(rootdir);
     return false;
 }
 
-void *GyroAng(void *vargp) {
-    printf("starting gyro");
+void *GyroAng(void *calibration_number_void) {
+    int calibration_number;
+    calibration_number = (int)calibration_number_void;
+    printf("starting gyro\n");
     char modeFileLoc[50], valueFileLoc[50];
-    char *gyroLoc = findGyro();
-    printf("gyro found");
-    printf("%s\n",gyroLoc);
-    sleep(5);
-    snprintf(modeFileLoc, sizeof(modeFileLoc), "%s/mode", gyroLoc);
-    snprintf(valueFileLoc, sizeof(valueFileLoc), "%s/value0", gyroLoc);
+    findGyro();
+    if(strncmp("/sys/class/lego-sensor/sensor",location,29)==0){
+        printf("gyro found at: %s\n", location);
+    }else{
+        printf("no gyro found :( ... is it plugged in? (exiting)\n");
+        return 0;
+    }
+    snprintf(modeFileLoc, sizeof(modeFileLoc), "%s/mode", location);
+    snprintf(valueFileLoc, sizeof(valueFileLoc), "%s/bin_data", location);
     FILE *gyroModeFile = fopen(modeFileLoc,"w");
     fprintf(gyroModeFile, "GYRO-RATE");
     fclose(gyroModeFile);
-    int gyroValue;
-    clock_t previous;
-    clock_t recent = 0;
-    while(true) {
-        FILE* gyroValueFile = fopen(valueFileLoc, "r");
+    short gyroValue;
+    clock_t previous,before,after;
+    clock_t recent=0;
+    double total_offset = 0;
+    double normal_offset;
+    before = clock();
+    for(int i=0;i<=calibration_number; i=i+1){
+        FILE* gyroValueFile = fopen(valueFileLoc, "rb");
         rewind(gyroValueFile);
-        fscanf(gyroValueFile, "%d", &gyroValue);
+        fread(&gyroValue, sizeof(gyroValue), 1, gyroValueFile);
         previous = recent;
         recent = clock();
-        gyroAngle = gyroAngle+(gyroValue*(((double) (recent - previous))/CLOCKS_PER_SEC));
+        printf("%d | %d | %f\n",i,gyroValue,total_offset);
+        total_offset = total_offset+(gyroValue*(((double) (recent - previous))/CLOCKS_PER_SEC));
+        fclose(gyroValueFile);
+    }
+    after = clock();
+    normal_offset = total_offset/(((double) (after-before))/CLOCKS_PER_SEC);
+    printf("%f\n",normal_offset);
+    while(true) {
+        FILE* gyroValueFile = fopen(valueFileLoc, "rb");
+        rewind(gyroValueFile);
+        fread(&gyroValue, sizeof(gyroValue), 1, gyroValueFile);
+        previous = recent;
+        recent = clock();
+        gyroAngle = gyroAngle+((gyroValue-normal_offset)*(((double) (recent - previous))/CLOCKS_PER_SEC));
         fclose(gyroValueFile);
     }
     return NULL;
@@ -74,12 +98,13 @@ void *GyroAng(void *vargp) {
 //    pthread_t gyroThread;
 //}
 
-STATIC mp_obj_t fll_start_gyro() {
+STATIC mp_obj_t fll_start_gyro(mp_obj_t calibration_num_obj) {
+    int calibration_num = mp_obj_get_int(calibration_num_obj);
     pthread_t gyroThread;
-    pthread_create(&gyroThread, NULL, GyroAng, NULL);
+    pthread_create(&gyroThread, NULL, GyroAng, (void *) calibration_num);
     return mp_const_true;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(fll_start_gyro_obj, fll_start_gyro);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_start_gyro_obj, fll_start_gyro);
 
 STATIC mp_obj_t fll_stop_gyro() {
     pthread_cancel(gyroThread);
@@ -98,13 +123,17 @@ STATIC mp_obj_t fll_test(mp_obj_t text_mp_obj) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_test_obj, fll_test);
 
-STATIC mp_obj_t fll_watch_gyro() {
+STATIC mp_obj_t fll_watch_gyro(mp_obj_t sample_rate_obj) {
+    int sample_rate = mp_obj_get_int(sample_rate_obj);
+    int delay = 1/sample_rate;
     while(true){
+        sleep(delay);
         printf("%f\n",gyroAngle);
     }
+    printf("returning\n");
     return mp_const_true;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(fll_watch_gyro_obj, fll_watch_gyro);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_watch_gyro_obj, fll_watch_gyro);
 
 
 STATIC const mp_rom_map_elem_t fll_module_globals_table[] = {
