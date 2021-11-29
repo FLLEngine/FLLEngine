@@ -7,10 +7,11 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <time.h>
+#include <sys/time.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <dirent.h>
+
 
 const char init_line[] = "Go Mindbenders!";
 pthread_t gyroThread;
@@ -64,32 +65,34 @@ void *GyroAng(void *calibration_number_void) {
     fprintf(gyroModeFile, "GYRO-RATE");
     fclose(gyroModeFile);
     short gyroValue;
-    clock_t previous,before,after;
-    clock_t recent=0;
+    struct timeval previous,recent,before,after;
+    gettimeofday(&recent,NULL);
     double total_offset = 0;
     double normal_offset;
-    before = clock();
+    gettimeofday(&before, NULL);
     for(int i=0;i<=calibration_number; i=i+1){
         FILE* gyroValueFile = fopen(valueFileLoc, "rb");
         rewind(gyroValueFile);
         fread(&gyroValue, sizeof(gyroValue), 1, gyroValueFile);
-        previous = recent;
-        recent = clock();
         printf("%d | %d | %f\n",i,gyroValue,total_offset);
-        total_offset = total_offset+(gyroValue*(((double) (recent - previous))/CLOCKS_PER_SEC));
+        previous = recent;
+        gettimeofday(&recent,NULL);
+        total_offset = total_offset+(gyroValue*((float)(recent.tv_usec - previous.tv_usec)/1000000));
         fclose(gyroValueFile);
     }
-    after = clock();
-    normal_offset = total_offset/(((double) (after-before))/CLOCKS_PER_SEC);
+    gettimeofday(&after,NULL);
+    normal_offset = total_offset/((float)((after.tv_usec - before.tv_usec) + ((after.tv_sec - before.tv_sec)*1000000))/1000000);
     printf("%f\n",normal_offset);
+    gettimeofday(&recent,NULL);
     while(true) {
         FILE* gyroValueFile = fopen(valueFileLoc, "rb");
         rewind(gyroValueFile);
         fread(&gyroValue, sizeof(gyroValue), 1, gyroValueFile);
         previous = recent;
-        recent = clock();
-        gyroAngle = gyroAngle+((gyroValue-normal_offset)*(((double) (recent - previous))/CLOCKS_PER_SEC));
+        gettimeofday(&recent,NULL);
+        gyroAngle = gyroAngle+((gyroValue-normal_offset)*((float)(recent.tv_usec - previous.tv_usec)/1000000));
         fclose(gyroValueFile);
+        usleep(10);
     }
     return NULL;
 }
@@ -119,15 +122,21 @@ STATIC mp_obj_t fll_test(mp_obj_t text_mp_obj) {
     char text[text_len];
     strcpy(text, (char *)pre_text);
     printf("%s: %d\n", text, text_len);
+    /* struct timeval before, after; */
+    /* gettimeofday(&before,NULL); */
+    /* sleep(2); */
+    /* gettimeofday(&after,NULL); */
+    /* double time_clocks = ((after.tv_usec - before.tv_usec) + ((after.tv_sec-before.tv_sec)*1000000))/1000000; */
+    /* printf("%f",time_clocks); */
     return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_test_obj, fll_test);
 
 STATIC mp_obj_t fll_watch_gyro(mp_obj_t sample_rate_obj) {
-    int sample_rate = mp_obj_get_int(sample_rate_obj);
-    int delay = 1/sample_rate;
+    //int sample_rate = mp_obj_get_int(sample_rate_obj);
+    //int delay = 1000/sample_rate;
     while(true){
-        sleep(delay);
+        sleep(1);
         printf("%f\n",gyroAngle);
     }
     printf("returning\n");
