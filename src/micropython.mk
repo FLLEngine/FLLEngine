@@ -1,3 +1,9 @@
 EXAMPLE_MOD_DIR := $(USERMOD_DIR)
 
+
+
+
+
 SRC_USERMOD += $(EXAMPLE_MOD_DIR)/fllengine.c
+SRC_USERMOD += $(EXAMPLE_MOD_DIR)/find.c
+SRC_USERMOD += $(EXAMPLE_MOD_DIR)/motion.c

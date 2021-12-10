@@ -1,6 +1,9 @@
 #include "py/runtime.h"
 #include "py/objstr.h"
 
+#include "find.h"
+#include "motion.h"
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,39 +21,8 @@ const char init_line[] = "Go Mindbenders!";
 pthread_t gyroThread;
 double gyroAngle;
 short gyroValue = 0;
-char location[35];
 
 
-// returns the sensor directory with the gyro most recently connected to the robot
-char *findGyro() {
-    printf("finding gyro\n");
-    struct dirent *dir;
-    DIR *rootdir = opendir("/sys/class/lego-sensor/");
-    if (rootdir == NULL) {
-        printf("Could not open lego-sensors directory/n");
-        return 0;
-    }
-    printf("children of sensors directory:\n");
-
-    while((dir = readdir(rootdir)) != NULL) {
-        printf("%s\n", dir->d_name);
-        if(strncmp("sensor", dir->d_name, 6)==0){
-            char path[50];
-            FILE *nameFile;
-            char name[30];
-            snprintf(path, sizeof(path), "/sys/class/lego-sensor/%s/driver_name", dir->d_name);
-            nameFile=fopen(path, "r");
-            fscanf(nameFile, "%s", name);
-            if(strcmp(name, "lego-ev3-gyro")==0) {
-                snprintf(location, sizeof(location), "/sys/class/lego-sensor/%s", dir->d_name);
-                closedir(rootdir);
-                return location;
-            }
-        }
-    }
-    closedir(rootdir);
-    return false;
-}
 
 
 // calls findGyro(), calibrates using data collected over a loop whose length is controlled with argument 0, starts and infinite loop calculating the current angle of the gyro and writing it to gyroAngle
@@ -60,7 +32,8 @@ void *GyroAng(void *calibration_number_void) {
     calibration_number = (int)calibration_number_void;
     printf("starting gyro\n");
     char modeFileLoc[50], valueFileLoc[50];
-    findGyro();
+    char location[35];
+    strcpy(location, findGyro());
     if(strncmp("/sys/class/lego-sensor/sensor",location,29)==0){
         printf("gyro found at: %s\n", location);
     }else{
@@ -122,16 +95,19 @@ STATIC mp_obj_t fll_to_loc(mp_obj_t currentLocObj, mp_obj_t targetLocObj, mp_obj
     int *targetLoc;
     mp_array_to_array(&currentLocTObj, &currentLoc);
     mp_array_to_array(&targetLocTObj, &targetLoc);
-
-    float targetAngle = (atan2(targetLoc[0]-currentLoc[0], targetLoc[1]-currentLoc[1]))*57.29578;  //strange number is radians to degrees conversion
-    if(targetAngle<0){
-        targetAngle = 360+targetAngle;
-    }
-
-    printf("from: (%d, %d) | To: (%d, %d) | Speed: %d | Reletive Angle: %f\n", currentLoc[0], currentLoc[1], targetLoc[0], targetLoc[1], speed, targetAngle);
-    return mp_const_true;
+    toLoc(currentLoc, targetLoc, speed);
+    return targetLocObj;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(fll_to_loc_obj, fll_to_loc);
+
+
+
+STATIC mp_obj_t fll_init(mp_obj_t motor_1_obj) {
+    int motor1Port = mp_obj_get_int(motor_1_obj);
+    motion_init(motor1Port);
+    return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_init_obj, fll_init);
 
 
 
@@ -192,6 +168,7 @@ STATIC const mp_rom_map_elem_t fll_module_globals_table[] = {
 { MP_ROM_QSTR(MP_QSTR_startGyro), MP_ROM_PTR(&fll_start_gyro_obj) },
 { MP_ROM_QSTR(MP_QSTR_stopGyro), MP_ROM_PTR(&fll_stop_gyro_obj) },
 { MP_ROM_QSTR(MP_QSTR_toLoc), MP_ROM_PTR(&fll_to_loc_obj) },
+{ MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&fll_init_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(fll_module_globals, fll_module_globals_table);
