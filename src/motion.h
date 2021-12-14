@@ -5,5 +5,6 @@
 
 int *toLoc(int targetLoc[], int currentLoc[], int speed);
 void motion_init(int motor1Port);
+void driveStraight();
 
 #endif // MOTION_H_

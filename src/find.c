@@ -45,9 +45,9 @@ char *findGyro() {
 
 
 
-struct Motors findMotors(int motor1Port) {
+driveMotors findMotors(int motor1Port) {
     printf(":(      %s\n", outPorts[1]);
-    struct Motors foundMotors;
+    driveMotors foundMotors;
     printf("finding motors\n");
     struct dirent *dir;
     DIR *rootdir = opendir("/sys/class/tacho-motor/");
@@ -75,13 +75,25 @@ struct Motors findMotors(int motor1Port) {
                 addressFile=fopen(addressPath, "r");
                 fscanf(addressFile, "%s", address);
                 if(strcmp(address, outPorts[motor1Port])==0){
-                    snprintf(foundMotors.Motor1, 40, "/sys/class/tacho-motor/%s", dir->d_name);
+                    fillMotor(dir->d_name, &foundMotors.Motor1);
                 }else{
-                    snprintf(foundMotors.Motor2, 40, "/sys/class/tacho-motor/%s", dir->d_name);
+                    fillMotor(dir->d_name, &foundMotors.Motor2);
                 }
             }
         }
     }
     closedir(rootdir);
     return foundMotors;
+}
+
+void fillMotor(char fileName[], Motor * asMotor){
+    snprintf(asMotor->root, 45, "/sys/class/tacho-motor/%s/", fileName);
+    snprintf(asMotor->command, 45, "/sys/class/tacho-motor/%s/command", fileName);
+    snprintf(asMotor->dutyCycle, 45, "/sys/class/tacho-motor/%s/duty_cycle_sp", fileName);
+    snprintf(asMotor->rampUp, 45, "/sys/class/tacho-motor/%s/ramp_up_sp", fileName);
+    snprintf(asMotor->speedSP, 45, "/sys/class/tacho-motor/%s/speed_sp", fileName);
+    snprintf(asMotor->stopAction, 45, "/sys/class/tacho-motor/%s/stop_action", fileName);
+    snprintf(asMotor->speedRD, 45, "/sys/class/tacho-motor/%s/speed", fileName);
+    snprintf(asMotor->positionRD, 45, "/sys/class/tacho-motor/%s/position", fileName);
+
 }

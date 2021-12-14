@@ -1,6 +1,7 @@
 #include "py/runtime.h"
 #include "py/objstr.h"
 
+#include "fllengine.h"
 #include "find.h"
 #include "motion.h"
 
@@ -19,7 +20,6 @@
 
 const char init_line[] = "Go Mindbenders!";
 pthread_t gyroThread;
-double gyroAngle;
 short gyroValue = 0;
 
 
@@ -70,7 +70,7 @@ void *GyroAng(void *calibration_number_void) {
         fread(&gyroValue, sizeof(gyroValue), 1, gyroValueFile);
         previous = recent;
         clock_gettime(CLOCK_REALTIME,&recent);
-        gyroAngle = gyroAngle+(gyroValue*(((double)(recent.tv_nsec - previous.tv_nsec)/1000000000)+(recent.tv_sec - previous.tv_sec)));
+        gyroAngle = gyroAngle+(gyroValue-normal_offset*(((double)(recent.tv_nsec - previous.tv_nsec)/1000000000)+(recent.tv_sec - previous.tv_sec)));
         fclose(gyroValueFile);
     }
     return NULL;
@@ -144,6 +144,16 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_test_obj, fll_test);
 
 
 
+STATIC mp_obj_t fll_drive_straight(mp_obj_t distance_obj, mp_obj_t angle_obj) {
+    int distance = mp_obj_get_int(distance_obj);
+    int angle = mp_obj_get_int(angle_obj);
+    driveStraight(distance, angle);
+    return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(fll_drive_straight_obj, fll_drive_straight);
+
+
+
 // enters an infinite loop that prints the current angle of the gyro
 STATIC mp_obj_t fll_watch_gyro(mp_obj_t sample_rate_obj) {
     //int sample_rate = mp_obj_get_int(sample_rate_obj);
@@ -169,6 +179,7 @@ STATIC const mp_rom_map_elem_t fll_module_globals_table[] = {
 { MP_ROM_QSTR(MP_QSTR_stopGyro), MP_ROM_PTR(&fll_stop_gyro_obj) },
 { MP_ROM_QSTR(MP_QSTR_toLoc), MP_ROM_PTR(&fll_to_loc_obj) },
 { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&fll_init_obj) },
+{ MP_ROM_QSTR(MP_QSTR_driveStraight), MP_ROM_PTR(&fll_drive_straight_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(fll_module_globals, fll_module_globals_table);

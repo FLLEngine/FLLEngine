@@ -3,12 +3,26 @@
 
 char *findGyro();
 
-struct Motors findMotors(int motor1Port);
+
+typedef struct Motor{
+    char root[45];
+    char command[45];
+    char dutyCycle[45];
+    char rampUp[45];
+    char speedSP[45];
+    char stopAction[45];
+    char speedRD[45];
+    char positionRD[45];
+}Motor;
 
 
-struct Motors {
-    char Motor1[40];
-    char Motor2[40];
-};
+typedef struct driveMotors{
+    struct Motor Motor1;
+    struct Motor Motor2;
+}driveMotors;
+
+
+driveMotors findMotors(int motor1Port);
+void fillMotor(char fileName[], Motor * asMotor);
 
 #endif // FIND_H
