@@ -12,7 +12,9 @@ void writeFileStr(char filePath[], char contents[]) {
 
 void writeFileInt(char filePath[], int contents) {
     FILE * writingFile = fopen(filePath, "w");
-    putw(contents, writingFile);
+    char contentsText[10];
+    snprintf(contentsText, 10,"%d", contents);
+    fprintf(writingFile, contentsText);
     fclose(writingFile);
 }
 

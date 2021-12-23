@@ -4,6 +4,7 @@
 #include "fllengine.h"
 #include "find.h"
 #include "motion.h"
+#include "functions.h"
 
 
 #include <stdio.h>
@@ -20,61 +21,10 @@
 
 const char init_line[] = "Go Mindbenders!";
 pthread_t gyroThread;
-short gyroValue = 0;
 
 
 
 
-// calls findGyro(), calibrates using data collected over a loop whose length is controlled with argument 0, starts and infinite loop calculating the current angle of the gyro and writing it to gyroAngle
-void *GyroAng(void *calibration_number_void) {
-    printf("starting gyro\n");
-    int calibration_number;
-    calibration_number = (int)calibration_number_void;
-    printf("starting gyro\n");
-    char modeFileLoc[50], valueFileLoc[50];
-    char location[35];
-    strcpy(location, findGyro());
-    if(strncmp("/sys/class/lego-sensor/sensor",location,29)==0){
-        printf("gyro found at: %s\n", location);
-    }else{
-        printf("no gyro found :( ... is it plugged in? (exiting)\n");
-        return 0;
-    }
-    snprintf(modeFileLoc, sizeof(modeFileLoc), "%s/mode", location);
-    snprintf(valueFileLoc, sizeof(valueFileLoc), "%s/bin_data", location);
-    FILE *gyroModeFile = fopen(modeFileLoc,"w");
-    fprintf(gyroModeFile, "GYRO-RATE");
-    fclose(gyroModeFile);
-    struct timespec previous,recent,before,after;
-    clock_gettime(CLOCK_REALTIME,&recent);
-    double total_offset = 0;
-    double normal_offset;
-    clock_gettime(CLOCK_REALTIME,&before);
-    for(int i=0;i<=calibration_number; i=i+1){
-        FILE* gyroValueFile = fopen(valueFileLoc, "rb");
-        rewind(gyroValueFile);
-        fread(&gyroValue, sizeof(gyroValue), 1, gyroValueFile);
-        printf("%d | %d | %f\n",i,gyroValue,total_offset);
-        previous = recent;
-        clock_gettime(CLOCK_REALTIME,&recent);
-        total_offset = total_offset+(gyroValue*(((double)(recent.tv_nsec - previous.tv_nsec)/1000000000)+(recent.tv_sec - previous.tv_sec)));
-        fclose(gyroValueFile);
-    }
-    clock_gettime(CLOCK_REALTIME,&after);
-    normal_offset = total_offset/(((double)(after.tv_nsec - before.tv_nsec)/1000000000)+(after.tv_sec - before.tv_sec));
-    printf("%f\n",normal_offset);
-    clock_gettime(CLOCK_REALTIME,&recent);
-    while(true) {
-        FILE* gyroValueFile = fopen(valueFileLoc, "rb");
-        rewind(gyroValueFile);
-        fread(&gyroValue, sizeof(gyroValue), 1, gyroValueFile);
-        previous = recent;
-        clock_gettime(CLOCK_REALTIME,&recent);
-        gyroAngle = gyroAngle+(gyroValue-normal_offset*(((double)(recent.tv_nsec - previous.tv_nsec)/1000000000)+(recent.tv_sec - previous.tv_sec)));
-        fclose(gyroValueFile);
-    }
-    return NULL;
-}
 
 void mp_array_to_array(mp_obj_tuple_t **mp_array, int ** arr) {
     * arr = malloc(2 * sizeof(int));
@@ -102,12 +52,13 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_3(fll_to_loc_obj, fll_to_loc);
 
 
 
-STATIC mp_obj_t fll_init(mp_obj_t motor_1_obj) {
+STATIC mp_obj_t fll_init(mp_obj_t motor_1_obj, mp_obj_t wheel_dia_obj) {
     int motor1Port = mp_obj_get_int(motor_1_obj);
-    motion_init(motor1Port);
+    float wheelDiameter = mp_obj_get_float(wheel_dia_obj);
+    motion_init(motor1Port, wheelDiameter);
     return mp_const_true;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_init_obj, fll_init);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(fll_init_obj, fll_init);
 
 
 
@@ -146,7 +97,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_test_obj, fll_test);
 
 STATIC mp_obj_t fll_drive_straight(mp_obj_t distance_obj, mp_obj_t angle_obj) {
     int distance = mp_obj_get_int(distance_obj);
-    int angle = mp_obj_get_int(angle_obj);
+    float angle = mp_obj_get_float(angle_obj);
     driveStraight(distance, angle);
     return mp_const_true;
 }
@@ -167,6 +118,7 @@ STATIC mp_obj_t fll_watch_gyro(mp_obj_t sample_rate_obj) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_watch_gyro_obj, fll_watch_gyro);
 
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_sleep_obj, fll_sleep);
 // micropython stuff ===================================================================================================================
 // =====================================================================================================================================
 
@@ -180,6 +132,7 @@ STATIC const mp_rom_map_elem_t fll_module_globals_table[] = {
 { MP_ROM_QSTR(MP_QSTR_toLoc), MP_ROM_PTR(&fll_to_loc_obj) },
 { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&fll_init_obj) },
 { MP_ROM_QSTR(MP_QSTR_driveStraight), MP_ROM_PTR(&fll_drive_straight_obj) },
+{ MP_ROM_QSTR(MP_QSTR_sleep), MP_ROM_PTR(&fll_sleep_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(fll_module_globals, fll_module_globals_table);

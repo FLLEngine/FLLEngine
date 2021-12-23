@@ -14,17 +14,18 @@ char outPorts[][16] = {"ev3-ports:outA", "ev3-ports:outB", "ev3-ports:outC", "ev
 // returns the sensor directory with the gyro most recently connected to the robot
 char *findGyro() {
     char *location = malloc(sizeof(char) * 35);
-    printf("finding gyro\n");
+    printf("\n\nfinding gyro\n\n");
     struct dirent *dir;
     DIR *rootdir = opendir("/sys/class/lego-sensor/");
     if (rootdir == NULL) {
         printf("Could not open lego-sensors directory/n");
         return 0;
     }
-    printf("children of sensors directory:\n");
+    printf("__children of sensors directory________________\n|                                             |\n");
 
     while((dir = readdir(rootdir)) != NULL) {
-        printf("%s\n", dir->d_name);
+        printf("|                                             |\r");
+        printf("| %s\n", dir->d_name);
         if(strncmp("sensor", dir->d_name, 6)==0){
             char path[50];
             FILE *nameFile;
@@ -35,10 +36,12 @@ char *findGyro() {
             if(strcmp(name, "lego-ev3-gyro")==0) {
                 snprintf(location, 35, "/sys/class/lego-sensor/%s", dir->d_name);
                 closedir(rootdir);
+                printf("|_____________________________________________|\n");
                 return location;
             }
         }
     }
+    printf("|_____________________________________________|\n");
     closedir(rootdir);
     return false;
 }
@@ -46,19 +49,19 @@ char *findGyro() {
 
 
 driveMotors findMotors(int motor1Port) {
-    printf(":(      %s\n", outPorts[1]);
     driveMotors foundMotors;
-    printf("finding motors\n");
+    printf("\n\nfinding motors\n\n");
     struct dirent *dir;
     DIR *rootdir = opendir("/sys/class/tacho-motor/");
     if (rootdir == NULL) {
         printf("Could not open tacho-motor directory/n");
         return foundMotors;
     }
-    printf("children of motor directory:\n");
+    printf("__children of motors directory_________________\n|                                             |\n");
 
     while((dir = readdir(rootdir)) != NULL) {
-        printf("%s\n", dir->d_name);
+        printf("|                                             |\r");
+        printf("| %s\n", dir->d_name);
         if(strncmp("motor", dir->d_name, 5)==0){
             char path[50];
             char addressPath[50];
@@ -83,6 +86,7 @@ driveMotors findMotors(int motor1Port) {
         }
     }
     closedir(rootdir);
+    printf("|_____________________________________________|\n");
     return foundMotors;
 }
 
