@@ -8,7 +8,7 @@
 #include <sys/time.h>
 
 mp_obj_t fll_sleep(mp_obj_t time_obj) {
-    int time = mp_obj_get_int(time_obj);
-    sleep(time);
+    float time = mp_obj_get_float(time_obj);
+    usleep(time*1000000);
     return mp_const_true;
 }

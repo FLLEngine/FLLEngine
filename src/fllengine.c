@@ -52,13 +52,14 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_3(fll_to_loc_obj, fll_to_loc);
 
 
 
-STATIC mp_obj_t fll_init(mp_obj_t motor_1_obj, mp_obj_t wheel_dia_obj) {
+STATIC mp_obj_t fll_init(mp_obj_t motor_1_obj, mp_obj_t wheel_dia_obj, mp_obj_t invert_obj) {
     int motor1Port = mp_obj_get_int(motor_1_obj);
     float wheelDiameter = mp_obj_get_float(wheel_dia_obj);
-    motion_init(motor1Port, wheelDiameter);
+    printf("%d", mp_obj_is_true(invert_obj));
+    motion_init(motor1Port, wheelDiameter, mp_obj_is_true(invert_obj));
     return mp_const_true;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(fll_init_obj, fll_init);
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(fll_init_obj, fll_init);
 
 
 
@@ -105,6 +106,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(fll_drive_straight_obj, fll_drive_straight);
 
 
 
+STATIC mp_obj_t fll_turn_angle(mp_obj_t angle_obj) {
+    float angle = mp_obj_get_float(angle_obj);
+    turnAngle(angle);
+    return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_turn_angle_obj, fll_turn_angle);
+
+
+
 // enters an infinite loop that prints the current angle of the gyro
 STATIC mp_obj_t fll_watch_gyro(mp_obj_t sample_rate_obj) {
     //int sample_rate = mp_obj_get_int(sample_rate_obj);
@@ -133,6 +143,7 @@ STATIC const mp_rom_map_elem_t fll_module_globals_table[] = {
 { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&fll_init_obj) },
 { MP_ROM_QSTR(MP_QSTR_driveStraight), MP_ROM_PTR(&fll_drive_straight_obj) },
 { MP_ROM_QSTR(MP_QSTR_sleep), MP_ROM_PTR(&fll_sleep_obj) },
+{ MP_ROM_QSTR(MP_QSTR_turnAngle), MP_ROM_PTR(&fll_turn_angle_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(fll_module_globals, fll_module_globals_table);

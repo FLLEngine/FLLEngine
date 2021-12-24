@@ -2,6 +2,9 @@
 #include "fllengine.h"
 #include "ev3.h"
 
+#include "py/runtime.h"
+#include "py/objstr.h"
+
 #include <time.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -37,11 +40,29 @@ short gyroValue = 0;
 double gyroAngle;
 
 
-void motion_init(int motor1Port, float wheelDiameter) {
+int motorClamp(float value) {
+    int returnValue = (int)value;
+    if(abs(value) > 300) {
+        returnValue = 300*(value>0 ? (1) : (-1));
+    }else if(abs(value)<100){
+        returnValue = 100*(value>0 ? (1) : (-1));
+    }
+    return returnValue;
+}
+
+
+void motion_init(int motor1Port, float wheelDiameter, bool invert) {
+    printf("%d", invert);
     drivingMotors = findMotors(motor1Port);
     robot.wheelDia = wheelDiameter;
-    robot.wheelCirc = (3.14159265358979*((wheelDiameter/2)*(wheelDiameter/2)))/10;
+    robot.wheelCirc = (3.14159265358979*wheelDiameter)/10;
     robot.turnsPerCm = 1/robot.wheelCirc;
+    if(invert) {
+        robot.motorMult = -1;
+    }else{
+        robot.motorMult = 1;
+    }
+    printf("%f, %f, %f", robot.wheelDia, robot.wheelCirc, robot.turnsPerCm);
     printf("Motor 1: %s | Motor 2: %s\n", drivingMotors.Motor1.root, drivingMotors.Motor2.root);
     writeFileInt(drivingMotors.Motor1.dutyCycle, 100);
     writeFileInt(drivingMotors.Motor1.rampUp, 1000);
@@ -50,12 +71,19 @@ void motion_init(int motor1Port, float wheelDiameter) {
 }
 
 int *toLoc(int targetLoc[], int currentLoc[], int speed) {
-    float targetAngle = (atan2(targetLoc[0]-currentLoc[0], targetLoc[1]-currentLoc[1]))*57.29578;  //strange number is radians to degrees conversion
+    float targetAngle = (atan2(targetLoc[1]-currentLoc[1], targetLoc[0]-currentLoc[0]))*57.29578;  //strange number is radians to degrees conversion
+    float lineX = targetLoc[0]-currentLoc[0];
+    float lineY = targetLoc[1]-currentLoc[1];
+    float distance = sqrt(lineX*lineX+lineY*lineY);
     if(targetAngle<0){
         targetAngle = 360+targetAngle;
     }
 
     printf("from: (%d, %d) | To: (%d, %d) | Speed: %d | Reletive Angle: %f\n", currentLoc[0], currentLoc[1], targetLoc[0], targetLoc[1], speed, targetAngle);
+
+    turnAngle(targetAngle);
+    driveStraight(distance, targetAngle);
+
     return targetLoc;
 }
 
@@ -64,28 +92,44 @@ int *toLoc(int targetLoc[], int currentLoc[], int speed) {
 void driveStraight(int distance, float angle) {
     //printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", drivingMotors.Motor1.root,drivingMotors.Motor1.command,drivingMotors.Motor1.dutyCycle,drivingMotors.Motor1.rampUp,drivingMotors.Motor1.speedSP,drivingMotors.Motor1.stopAction,drivingMotors.Motor1.speedRD,drivingMotors.Motor1.positionRD);
     float adjDistance = distance*robot.turnsPerCm*360;
-    int startingDistance = readFileInt(drivingMotors.Motor1.positionRD);
-    printf("%d\n", startingDistance);
+    float startingDistance = (readFileInt32(drivingMotors.Motor1.positionRD)*robot.motorMult+readFileInt32(drivingMotors.Motor2.positionRD)*robot.motorMult)/2;
     writeFileStr(drivingMotors.Motor1.stopAction, "coast");
     writeFileStr(drivingMotors.Motor2.stopAction, "coast");
-    printf("coast\n");
-    printf("%d\n", ((readFileInt(drivingMotors.Motor1.positionRD) + readFileInt(drivingMotors.Motor2.positionRD) - (startingDistance * 2))/2) < distance);
-    while( 0 < adjDistance ) {  //compares average of motor positions to target distance
-        printf("%f\n", gyroAngle);
+    while( ((double)((readFileInt32(drivingMotors.Motor1.positionRD)*robot.motorMult + readFileInt32(drivingMotors.Motor2.positionRD)*robot.motorMult)/2-startingDistance) < adjDistance )) {  //compares average of motor positions to target distance
         usleep(10000);
-        double error = angle-gyroAngle;
-        printf("%f, %f, %f\n", error, angle, gyroAngle);
-        writeFileInt(drivingMotors.Motor1.speedSP, -200+(0-(error*3)));
-        writeFileInt(drivingMotors.Motor2.speedSP, -200+(error*3));
+        double error = fmod((float)(angle-gyroAngle+540),(360))-180;
+        writeFileInt(drivingMotors.Motor1.speedSP, -200+((error*5))*robot.motorMult);
+        writeFileInt(drivingMotors.Motor2.speedSP, -200+(0-(error*5))*robot.motorMult);
         writeFileStr(drivingMotors.Motor1.command, "run-forever");
         writeFileStr(drivingMotors.Motor2.command, "run-forever");
-        printf("run-forever\n");
     }
     writeFileStr(drivingMotors.Motor1.stopAction, "hold");
     writeFileStr(drivingMotors.Motor2.stopAction, "hold");
     writeFileStr(drivingMotors.Motor1.command, "stop");
     writeFileStr(drivingMotors.Motor2.command, "stop");
-    printf("hold\n");
+}
+
+
+void turnAngle(float angle) {
+    float startingAngle=gyroAngle;
+    float necesaryTurn = fmod((float)(angle-startingAngle+540),(360))-180; //finds the ideal turn to get to target angle
+    float targetAngle = startingAngle+necesaryTurn;
+    writeFileStr(drivingMotors.Motor1.stopAction, "coast");
+    writeFileStr(drivingMotors.Motor2.stopAction, "coast");
+    while(gyroAngle<targetAngle-0.5 || gyroAngle>targetAngle+0.5) {
+        float error = targetAngle-gyroAngle;
+        //printf("%f | %f | %f | %f \n", targetAngle, gyroAngle, error, fallback);
+        int motor1Val = motorClamp(((error*20)*robot.motorMult));
+        int motor2Val = motorClamp((0-(error*20)*robot.motorMult));
+        writeFileInt(drivingMotors.Motor1.speedSP, motor1Val);
+        writeFileInt(drivingMotors.Motor2.speedSP, motor2Val);
+        writeFileStr(drivingMotors.Motor1.command, "run-forever");
+        writeFileStr(drivingMotors.Motor2.command, "run-forever");
+    }
+    writeFileStr(drivingMotors.Motor1.stopAction, "hold");
+    writeFileStr(drivingMotors.Motor2.stopAction, "hold");
+    writeFileStr(drivingMotors.Motor1.command, "stop");
+    writeFileStr(drivingMotors.Motor2.command, "stop");
 }
 
 
@@ -136,6 +180,7 @@ void *GyroAng(void *calibration_number_void) {
         clock_gettime(CLOCK_REALTIME,&recent);
         gyroAngle = gyroAngle+((double)(gyroValue-normal_offset)*(((double)(recent.tv_nsec - previous.tv_nsec)/1000000000)+(recent.tv_sec - previous.tv_sec)));
         fclose(gyroValueFile);
+        printf("angle: %f\r",gyroAngle);
     }
     return NULL;
 }

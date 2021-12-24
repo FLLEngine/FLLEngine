@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 void writeFileStr(char filePath[], char contents[]) {
     FILE * writingFile = fopen(filePath, "w");
@@ -21,8 +22,18 @@ void writeFileInt(char filePath[], int contents) {
 
 int readFileInt(char filePath[]) {
     FILE * readingFile = fopen(filePath, "r");
+    rewind(readingFile);
     int returnValue;
     fread(&returnValue, sizeof(returnValue), 1, readingFile);
+    fclose(readingFile);
+    return returnValue;
+}
+
+int32_t readFileInt32(char filePath[]) {
+    FILE * readingFile = fopen(filePath ,"r");
+    rewind(readingFile);
+    int32_t returnValue;
+    fscanf(readingFile, "%d", &returnValue);
     fclose(readingFile);
     return returnValue;
 }
