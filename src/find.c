@@ -90,6 +90,44 @@ driveMotors findMotors(int motor1Port) {
     return foundMotors;
 }
 
+attachMotors findAttachments(int attachment1Port) {
+    attachMotors foundMotors;
+    struct dirent *dir;
+    DIR *rootdir = opendir("/sys/class/tacho-motor/");
+    if (rootdir == NULL) {
+        printf("Could not open tacho-motor directory/n");
+        return foundMotors;
+    }
+
+    while((dir = readdir(rootdir)) != NULL) {
+        if(strncmp("motor", dir->d_name, 5)==0){
+            char path[50];
+            char addressPath[50];
+            FILE *nameFile;
+            FILE *addressFile;
+            char address[30];
+            char name[30];
+            snprintf(path, sizeof(path), "/sys/class/tacho-motor/%s/driver_name", dir->d_name);
+            nameFile=fopen(path, "r");
+            fscanf(nameFile, "%s", name);
+            fclose(nameFile);
+            if(strcmp(name, "lego-ev3-m-motor")==0) {
+                snprintf(addressPath, sizeof(addressPath), "/sys/class/tacho-motor/%s/address", dir->d_name);
+                addressFile=fopen(addressPath, "r");
+                fscanf(addressFile, "%s", address);
+                if(strcmp(address, outPorts[attachment1Port])==0){
+                    fillMotor(dir->d_name, &foundMotors.attachment1);
+                }else{
+                    fillMotor(dir->d_name, &foundMotors.attachment2);
+                }
+            }
+        }
+    }
+    closedir(rootdir);
+    return foundMotors;
+}
+
+
 void fillMotor(char fileName[], Motor * asMotor){
     snprintf(asMotor->root, 45, "/sys/class/tacho-motor/%s/", fileName);
     snprintf(asMotor->command, 45, "/sys/class/tacho-motor/%s/command", fileName);

@@ -9,7 +9,7 @@ A library for controlling a lego ev3 robot with every tool you would ever need t
 - [x] create basic driving functions
 - [x] implement ToLoc function
 - [ ] fix mispelling of docker package :D
-- [ ] include basic functions for attachment motors
+- [x] include basic functions for attachment motors
 - [ ] include checks for gyro accuracy
 - [ ] add support for ev3 buttons
 - [ ] incorporate wind-down on motors when stopping

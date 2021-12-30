@@ -6,10 +6,11 @@ do
 
         --update | -u)
 		docker exec --tty fllngine_armel make
-		rsync -avz --del --exclude '.*' /home/colin_nelson/MBRobot/$3/* /home/colin_nelson/MBRobot/$3staging/
-		cp /home/colin_nelson/MBRobot/FLLEngine/micropython/ports/unix/micropython /home/colin_nelson/MBRobot/$3staging/fllengine-micropython
+		rsync -avz --del --exclude '.*' /home/mindbenders/MBRobot/$3/* /home/mindbenders/MBRobot/$3staging/
+		cp /home/mindbenders/MBRobot/FLLEngine/micropython/ports/unix/micropython /home/mindbenders/MBRobot/$3staging/fllengine-micropython
+		echo "test"
 		expect -c "
-		spawn rsync -avz --del /home/colin_nelson/MBRobot/$3staging robot@10.42.0.$2:/home/robot/MBRobot/
+		spawn rsync -avz --del /home/mindbenders/MBRobot/$3staging robot@10.42.0.$2:/home/robot/MBRobot/
 		expect \"(robot@10.42.0.$2) Password: \" {
                 	send \"maker\n\"
 		}
@@ -32,10 +33,10 @@ do
 
 	--both | -b)
 		docker exec --tty fllngine_armel make
-		rsync -avz --del --exclude '.*' /home/colin_nelson/MBRobot/$3/* /home/colin_nelson/MBRobot/$3staging/
-		cp /home/colin_nelson/MBRobot/FLLEngine/micropython/ports/unix/micropython /home/colin_nelson/MBRobot/$3staging/fllengine-micropython
+		rsync -avz --del --exclude '.*' /home/mindbenders/MBRobot/$3/* /home/mindbenders/MBRobot/$3staging/
+		cp /home/mindbenders/MBRobot/FLLEngine/micropython/ports/unix/micropython /home/mindbenders/MBRobot/$3staging/fllengine-micropython
 		expect -c "
-		spawn rsync -avz --del /home/colin_nelson/MBRobot/$3staging robot@10.42.0.$2:/home/robot/MBRobot/
+		spawn rsync -avz --del /home/mindbenders/MBRobot/$3staging robot@10.42.0.$2:/home/robot/MBRobot/
 		expect \"(robot@10.42.0.$2) Password: \" {
                 	send \"maker\n\"
 		}

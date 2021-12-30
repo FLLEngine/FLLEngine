@@ -26,10 +26,10 @@ pthread_t gyroThread;
 
 
 
-void mp_array_to_array(mp_obj_tuple_t **mp_array, int ** arr) {
-    * arr = malloc(2 * sizeof(int));
+void mp_array_to_array(mp_obj_tuple_t **mp_array, float ** arr) {
+    * arr = malloc(2 * sizeof(float));
     for(int i=0; i<2;i=i+1) {
-        (*arr)[i] = mp_obj_get_int((*mp_array)->items[i]);
+        (*arr)[i] = mp_obj_get_float((*mp_array)->items[i]);
     }
 }
 
@@ -41,8 +41,8 @@ STATIC mp_obj_t fll_to_loc(mp_obj_t currentLocObj, mp_obj_t targetLocObj, mp_obj
 
     mp_obj_tuple_t *currentLocTObj = MP_OBJ_TO_PTR(currentLocObj);
     mp_obj_tuple_t *targetLocTObj = MP_OBJ_TO_PTR(targetLocObj);
-    int *currentLoc;
-    int *targetLoc;
+    float *currentLoc;
+    float *targetLoc;
     mp_array_to_array(&currentLocTObj, &currentLoc);
     mp_array_to_array(&targetLocTObj, &targetLoc);
     toLoc(currentLoc, targetLoc, speed);
@@ -52,11 +52,26 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_3(fll_to_loc_obj, fll_to_loc);
 
 
 
-STATIC mp_obj_t fll_init(mp_obj_t motor_1_obj, mp_obj_t wheel_dia_obj, mp_obj_t invert_obj) {
-    int motor1Port = mp_obj_get_int(motor_1_obj);
+STATIC mp_obj_t fll_attachment_run(mp_obj_t attachment_obj, mp_obj_t position_obj) {
+    int attachment = mp_obj_get_int(attachment_obj);
+    int position = mp_obj_get_int(position_obj);
+
+    attachmentPos(attachment, position);
+    return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(fll_attachment_run_obj, fll_attachment_run);
+
+
+
+STATIC mp_obj_t fll_init(mp_obj_t motor_roots_obj, mp_obj_t wheel_dia_obj, mp_obj_t invert_obj) {
+    mp_obj_tuple_t *motor_roots_t_obj = MP_OBJ_TO_PTR(motor_roots_obj);
+    float *motor_roots;
+    mp_array_to_array(&motor_roots_t_obj, &motor_roots);
     float wheelDiameter = mp_obj_get_float(wheel_dia_obj);
+    int motor1Port = (int)motor_roots[0];
+    int attachment1Port = (int)motor_roots[1];
     printf("%d", mp_obj_is_true(invert_obj));
-    motion_init(motor1Port, wheelDiameter, mp_obj_is_true(invert_obj));
+    motion_init(motor1Port, attachment1Port, wheelDiameter, mp_obj_is_true(invert_obj));
     return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(fll_init_obj, fll_init);
@@ -64,10 +79,10 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_3(fll_init_obj, fll_init);
 
 
 // creates a thread that runs the GyroAng() function, argument 0 is passed through to argument 0 of GyroAng()
-STATIC mp_obj_t fll_start_gyro(mp_obj_t calibration_num_obj) {
-    int calibration_num = mp_obj_get_int(calibration_num_obj);
+STATIC mp_obj_t fll_start_gyro(mp_obj_t starting_angle_obj) {
+    int starting_angle = mp_obj_get_float(starting_angle_obj);
     pthread_t gyroThread;
-    pthread_create(&gyroThread, NULL, GyroAng, (void *) calibration_num);
+    pthread_create(&gyroThread, NULL, GyroAng, (void *) starting_angle);
     return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_start_gyro_obj, fll_start_gyro);
@@ -142,8 +157,9 @@ STATIC const mp_rom_map_elem_t fll_module_globals_table[] = {
 { MP_ROM_QSTR(MP_QSTR_toLoc), MP_ROM_PTR(&fll_to_loc_obj) },
 { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&fll_init_obj) },
 { MP_ROM_QSTR(MP_QSTR_driveStraight), MP_ROM_PTR(&fll_drive_straight_obj) },
-{ MP_ROM_QSTR(MP_QSTR_sleep), MP_ROM_PTR(&fll_sleep_obj) },
 { MP_ROM_QSTR(MP_QSTR_turnAngle), MP_ROM_PTR(&fll_turn_angle_obj) },
+{ MP_ROM_QSTR(MP_QSTR_sleep), MP_ROM_PTR(&fll_sleep_obj) },
+{ MP_ROM_QSTR(MP_QSTR_attachmentRun), MP_ROM_PTR(&fll_attachment_run_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(fll_module_globals, fll_module_globals_table);

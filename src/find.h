@@ -21,8 +21,14 @@ typedef struct driveMotors{
     struct Motor Motor2;
 }driveMotors;
 
+typedef struct attachMotors{
+    struct Motor attachment1;
+    struct Motor attachment2;
+}attachMotors;
+
 
 driveMotors findMotors(int motor1Port);
+attachMotors findAttachments(int attachment1Port);
 void fillMotor(char fileName[], Motor * asMotor);
 
 #endif // FIND_H

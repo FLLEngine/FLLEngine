@@ -16,8 +16,9 @@ typedef struct drivetrain {
 
 extern double gyroAngle;
 void *GyroAng(void *calibration_number_void);
-int *toLoc(int targetLoc[], int currentLoc[], int speed);
-void motion_init(int motor1Port, float wheelDiameter, bool invert);
+float *toLoc(float targetLoc[], float currentLoc[], int speed);
+void motion_init(int motor1Port, int attachment1Port, float wheelDiameter, bool invert);
 void driveStraight(int distance, float angle);
 void turnAngle(float angle);
+void attachmentPos(int attachment, int position);
 #endif // MOTION_H_
