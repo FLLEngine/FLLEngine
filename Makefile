@@ -31,4 +31,4 @@ CFLAGS += -DMICROPY_MODULE_FROZEN_STR
 endif
 
 main:
-	make -C micropython/ports/unix USER_C_MODULES=../../.. V=1 PYBRICKS_VERSION_LEVEL_STR='idgaf'
+	make -C micropython/ports/unix USER_C_MODULES=../../.. V=1 PYBRICKS_VERSION_LEVEL_STR='idgaf' CFLAGS_USERMOD=-lncursesw

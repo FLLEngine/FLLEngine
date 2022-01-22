@@ -18,7 +18,8 @@ extern double gyroAngle;
 void *GyroAng(void *calibration_number_void);
 float *toLoc(float targetLoc[], float currentLoc[], int speed);
 void motion_init(int motor1Port, int attachment1Port, float wheelDiameter, bool invert);
-void driveStraight(int distance, float angle);
+void driveStraight(int distance, float angle, int speed);
 void turnAngle(float angle);
 void attachmentPos(int attachment, int position);
+void waitForButton();
 #endif // MOTION_H_

@@ -21,6 +21,7 @@ RUN sudo apt-get update && \
         pkg-config \
         python \
         python3 \
+        ncurses-dev \
         uthash-dev:armel \
         xfonts-100dpi
 RUN apt-get download umockdev:armel && \

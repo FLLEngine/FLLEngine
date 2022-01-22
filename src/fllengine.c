@@ -111,13 +111,14 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_test_obj, fll_test);
 
 
 
-STATIC mp_obj_t fll_drive_straight(mp_obj_t distance_obj, mp_obj_t angle_obj) {
+STATIC mp_obj_t fll_drive_straight(mp_obj_t distance_obj, mp_obj_t angle_obj, mp_obj_t speed_obj) {
     int distance = mp_obj_get_int(distance_obj);
     float angle = mp_obj_get_float(angle_obj);
-    driveStraight(distance, angle);
+    int speed = mp_obj_get_int(speed_obj);
+    driveStraight(distance, angle, speed);
     return mp_const_true;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(fll_drive_straight_obj, fll_drive_straight);
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(fll_drive_straight_obj, fll_drive_straight);
 
 
 
@@ -143,6 +144,15 @@ STATIC mp_obj_t fll_watch_gyro(mp_obj_t sample_rate_obj) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_watch_gyro_obj, fll_watch_gyro);
 
+
+//STATIC mp_obj_t fll_wait_for_button() {
+//    waitForButton();
+//    return mp_const_true;
+//}
+//STATIC MP_DEFINE_CONST_FUN_OBJ_0(fll_wait_for_button_obj, fll_wait_for_button);
+
+
+
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(fll_sleep_obj, fll_sleep);
 // micropython stuff ===================================================================================================================
 // =====================================================================================================================================
@@ -160,6 +170,7 @@ STATIC const mp_rom_map_elem_t fll_module_globals_table[] = {
 { MP_ROM_QSTR(MP_QSTR_turnAngle), MP_ROM_PTR(&fll_turn_angle_obj) },
 { MP_ROM_QSTR(MP_QSTR_sleep), MP_ROM_PTR(&fll_sleep_obj) },
 { MP_ROM_QSTR(MP_QSTR_attachmentRun), MP_ROM_PTR(&fll_attachment_run_obj) },
+//{ MP_ROM_QSTR(MP_QSTR_buttonWait), MP_ROM_PTR(&fll_wait_for_button_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(fll_module_globals, fll_module_globals_table);

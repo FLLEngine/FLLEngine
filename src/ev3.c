@@ -3,6 +3,22 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <pthread.h>
+
+
+
+
+void writeFileStr2(char filePath1[], char filePath2[], char contents[]) {
+    pthread_t self_thread = pthread_self();
+    pthread_setschedprio(self_thread, 10);
+    FILE * writingFile1 = fopen(filePath1, "w");
+    FILE * writingFile2 = fopen(filePath2, "w");
+    fputs(contents, writingFile1);
+    fputs(contents, writingFile2);
+    fclose(writingFile1);
+    fclose(writingFile2);
+    pthread_setschedprio(self_thread, 0);
+}
 
 void writeFileStr(char filePath[], char contents[]) {
     FILE * writingFile = fopen(filePath, "w");
